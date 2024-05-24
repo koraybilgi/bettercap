@@ -12,7 +12,7 @@ import (
 	"github.com/bettercap/bettercap/modules/net_sniff"
 	"github.com/bettercap/bettercap/modules/syn_scan"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v57/github"
 
 	"github.com/evilsocket/islazy/tui"
 )

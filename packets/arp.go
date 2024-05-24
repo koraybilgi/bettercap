@@ -3,9 +3,12 @@ package packets
 import (
 	"net"
 
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket/layers"
 )
 
+/*
+ *  RAW CONSTRUCTORS
+ */
 func NewARPTo(from net.IP, from_hw net.HardwareAddr, to net.IP, to_hw net.HardwareAddr, req uint16) (layers.Ethernet, layers.ARP) {
 	eth := layers.Ethernet{
 		SrcMAC:       from_hw,
@@ -31,6 +34,9 @@ func NewARP(from net.IP, from_hw net.HardwareAddr, to net.IP, req uint16) (layer
 	return NewARPTo(from, from_hw, to, []byte{0, 0, 0, 0, 0, 0}, req)
 }
 
+/*
+ *  PACKET CONSTRUCTOR
+ */
 func NewARPRequest(from net.IP, from_hw net.HardwareAddr, to net.IP) (error, []byte) {
 	eth, arp := NewARP(from, from_hw, to, layers.ARPRequest)
 	return Serialize(&eth, &arp)

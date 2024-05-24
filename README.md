@@ -33,3 +33,7 @@ bettercap is a powerful, easily extensible and portable framework written in Go 
 ## Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/bettercap/bettercap.svg)](https://starchart.cc/bettercap/bettercap)
+
+## Docker file for aarch64
+Can be found on:
+https://hub.docker.com/r/koraybilgi/bettercap-aarch64

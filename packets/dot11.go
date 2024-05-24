@@ -6,14 +6,14 @@ import (
 
 	"github.com/bettercap/bettercap/network"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
 )
 
 var (
 	openFlags      = 1057
 	wpaFlags       = 1041
-	specManFlag    = 1<<8
+	specManFlag    = 1 << 8
 	durationID     = uint16(0x013a)
 	capabilityInfo = uint16(0x0411)
 	listenInterval = uint16(3)

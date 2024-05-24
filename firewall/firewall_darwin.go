@@ -35,6 +35,8 @@ func Make(iface *network.Endpoint) FirewallManager {
 		enabled:    false,
 	}
 
+	fmt.Printf("FW iface %v\n", iface)
+
 	firewall.forwarding = firewall.IsForwardingEnabled()
 
 	return firewall

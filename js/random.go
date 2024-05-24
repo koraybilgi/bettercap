@@ -3,6 +3,7 @@ package js
 import (
 	"math/rand"
 	"net"
+
 	"github.com/bettercap/bettercap/network"
 )
 

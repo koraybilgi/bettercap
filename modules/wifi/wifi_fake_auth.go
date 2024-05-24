@@ -3,9 +3,10 @@ package wifi
 import (
 	"bytes"
 	"fmt"
+	"net"
+
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
-	"net"
 )
 
 

@@ -1,8 +1,9 @@
 package net_recon
 
 import (
-	"github.com/bettercap/bettercap/modules/utils"
 	"time"
+
+	"github.com/bettercap/bettercap/modules/utils"
 
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/session"
@@ -10,12 +11,14 @@ import (
 
 type Discovery struct {
 	session.SessionModule
-	selector *utils.ViewSelector
+	selector     *utils.ViewSelector
+	oldEndpoints map[string]network.Endpoint
 }
 
 func NewDiscovery(s *session.Session) *Discovery {
 	mod := &Discovery{
 		SessionModule: session.NewSessionModule("net.recon", s),
+		oldEndpoints:  make(map[string]network.Endpoint),
 	}
 
 	mod.AddHandler(session.NewModuleHandler("net.recon on", "",
@@ -77,23 +80,49 @@ func (mod Discovery) Author() string {
 	return "Simone Margaritelli <evilsocket@gmail.com>"
 }
 
-func (mod *Discovery) runDiff(cache network.ArpTable) {
+func (mod *Discovery) runDiff(currentArpTable network.ArpTable) {
 	// check for endpoints who disappeared
-	var rem network.ArpTable = make(network.ArpTable)
+	var removeList network.ArpTable = make(network.ArpTable)
+
+	/*
+		La tabella di CACHE viene letteralmente dal comando `arp -a`, parsato.
+		Quando si fa il `remove` dalla LAN, l'host non viene realmente rimosso
+		fino a quando ttl = 0 (vedi network/lan.go),
+		Dopo 10 tentativi di Remove() (ovvero 10 secondi e 10 letture da `arp -a`)
+		LAN rimuove realmente l'host.
+		La natura del problema risiede nella differenza tra il ttl del sistema operativo
+		e il ttl di LAN. Per il sistema operativo un host è inattivo molto prima di
+		LAN, pertanto verrà reinserito piu volte in oldEndpoints.
+	*/
 
 	mod.Session.Lan.EachHost(func(mac string, e *network.Endpoint) {
-		if _, found := cache[mac]; !found {
-			rem[mac] = e.IpAddress
-		}
+		endpoint_ip := e.IpAddress
+		client_mac, found := currentArpTable[endpoint_ip]
+		mod.Warning("IP: %s - CMAC: %s HMAC: %s - Found: %s", endpoint_ip, client_mac, e.HwAddress, found)
+
+		if !found || (client_mac != e.HwAddress) { // not found or changed
+			removeList[mac] = e.IpAddress
+		} /* else if _, found := mod.oldEndpoints[mac]; found { // found and unchanged
+			delete(mod.oldEndpoints, mac)
+			mod.Warning("Removed %s -> %s from old endpoint", mac, e_ip)
+		}*/
 	})
 
-	for mac, ip := range rem {
-		mod.Session.Lan.Remove(ip, mac)
+	for mac, ip := range removeList {
+		endpoint := *mod.Session.Lan.GetByIp(ip)
+		if hard_remove := mod.Session.Lan.Remove(ip, mac); hard_remove {
+			mod.oldEndpoints[mac] = endpoint
+			//mod.Warning("Added %s -> %s to old endpoint len: %v", mac, ip, len(mod.oldEndpoints))
+
+		}
 	}
 
 	// now check for new friends ^_^
-	for ip, mac := range cache {
-		mod.Session.Lan.AddIfNew(ip, mac)
+	for ip, mac := range currentArpTable {
+		if found := mod.Session.Lan.AddIfNew(ip, mac); found == nil && !mod.Session.Lan.ShouldIgnore(ip, mac) {
+			delete(mod.oldEndpoints, mac)
+			mod.Warning("FOUND %s %s oldEndpoints: %v", ip, mac, len(mod.oldEndpoints))
+		}
 	}
 }
 

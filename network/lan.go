@@ -119,7 +119,7 @@ func (lan *LAN) WasMissed(mac string) bool {
 	return true
 }
 
-func (lan *LAN) Remove(ip, mac string) {
+func (lan *LAN) Remove(ip, mac string) bool {
 	lan.Lock()
 	defer lan.Unlock()
 
@@ -129,12 +129,13 @@ func (lan *LAN) Remove(ip, mac string) {
 			delete(lan.hosts, mac)
 			delete(lan.ttl, mac)
 			lan.lostCb(e)
+			return true
 		}
-		return
 	}
+	return false
 }
 
-func (lan *LAN) shouldIgnore(ip, mac string) bool {
+func (lan *LAN) ShouldIgnore(ip, mac string) bool {
 	// skip our own address
 	if ip == lan.iface.IpAddress || mac == lan.iface.HwAddress {
 		return true
@@ -178,17 +179,19 @@ func (lan *LAN) EachHost(cb func(mac string, e *Endpoint)) {
 	}
 }
 
+// Refresh ttl of host or create a new one
+// @return Endpoint if host already exists
 func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 	lan.Lock()
 	defer lan.Unlock()
 
 	mac = NormalizeMac(mac)
 
-	if lan.shouldIgnore(ip, mac) {
+	if lan.ShouldIgnore(ip, mac) {
 		return nil
 	} else if t, found := lan.hosts[mac]; found {
 		if lan.ttl[mac] < LANDefaultttl {
-			lan.ttl[mac]++
+			lan.ttl[mac] = LANDefaultttl
 		}
 		return t
 	}

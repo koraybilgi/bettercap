@@ -31,3 +31,15 @@ func TestBannerAuthor(t *testing.T) {
 		t.Fatalf("expected '%s', got '%s'", "Simone 'evilsocket' Margaritelli", Author)
 	}
 }
+
+func TestBannerEditor1(t *testing.T) {
+	if Editor1 != "Jeroen 'Jayofelony' Oudshoorn" {
+		t.Fatalf("expected '%s', got '%s'", "Jeroen 'Jayofelony' Oudshoorn", Editor1)
+	}
+}
+
+func TestBannerEditor2(t *testing.T) {
+	if Editor2 != "JackieSpring" {
+		t.Fatalf("expected '%s', got '%s'", "JackieSpring", Editor2)
+	}
+}

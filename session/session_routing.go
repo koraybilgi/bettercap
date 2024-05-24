@@ -1,10 +1,11 @@
 package session
 
 import (
+	"time"
+
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/routing"
 	"github.com/evilsocket/islazy/log"
-	"time"
 )
 
 type gateway struct {

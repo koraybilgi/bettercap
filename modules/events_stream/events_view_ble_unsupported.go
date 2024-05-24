@@ -1,9 +1,11 @@
+//go:build windows
 // +build windows
 
 package events_stream
 
 import (
 	"io"
+
 	"github.com/bettercap/bettercap/session"
 )
 

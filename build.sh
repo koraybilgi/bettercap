@@ -1,21 +1,22 @@
 #!/bin/bash
 BUILD_FOLDER=build
+# shellcheck disable=SC2002
 VERSION=$(cat core/banner.go | grep Version | cut -d '"' -f 2)
 
 bin_dep() {
     BIN=$1
-    which $BIN > /dev/null || { echo "@ Dependency $BIN not found !"; exit 1; }
+    which "$BIN" > /dev/null || { echo "@ Dependency $BIN not found !"; exit 1; }
 }
 
 host_dep() {
     HOST=$1
-    ping -c 1 $HOST > /dev/null || { echo "@ Virtual machine host $HOST not visible !"; exit 1; }
+    ping -c 1 "$HOST" > /dev/null || { echo "@ Virtual machine host $HOST not visible !"; exit 1; }
 }
 
 create_exe_archive() {
     bin_dep 'zip'
 
-    OUTPUT=$1
+    OUTPUT=$1bettercap
 
     echo "@ Creating archive $OUTPUT ..."
     zip -j "$OUTPUT" bettercap.exe ../README.md ../LICENSE.md > /dev/null
@@ -44,9 +45,11 @@ build_linux_armv6l() {
     DIR=/home/pi/gocode/src/github.com/bettercap/bettercap
 
     echo "@ Updating repo on arm6l host ..."
+    # shellcheck disable=SC2029
     ssh pi@arc.local "cd $DIR && rm -rf '$OUTPUT' && git checkout . && git checkout master && git pull" > /dev/null
 
     echo "@ Building linux/armv6l ..."
+    # shellcheck disable=SC2029
     ssh pi@arc.local "export GOPATH=/home/pi/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build -o bettercap ." > /dev/null
 
     scp -C pi@arc.local:$DIR/bettercap . > /dev/null
@@ -58,9 +61,11 @@ build_macos_amd64() {
     DIR=/Users/evilsocket/gocode/src/github.com/bettercap/bettercap
 
     echo "@ Updating repo on MacOS VM ..."
+    # shellcheck disable=SC2029
     ssh osxvm "cd $DIR && rm -rf '$OUTPUT' && git checkout . && git checkout master && git pull" > /dev/null
 
     echo "@ Building darwin/amd64 ..."
+    # shellcheck disable=SC2029
     ssh osxvm "export GOPATH=/Users/evilsocket/gocode && cd '$DIR' && PATH=$PATH:/usr/local/bin && go get ./... && go build -o bettercap ." > /dev/null
 
     scp -C osxvm:$DIR/bettercap . > /dev/null
@@ -72,9 +77,11 @@ build_windows_amd64() {
     DIR=c:/Users/evilsocket/gopath/src/github.com/bettercap/bettercap
 
     echo "@ Updating repo on Windows VM ..."
+    # shellcheck disable=SC2029
     ssh winvm "cd $DIR && git checkout . && git checkout master && git pull && go get ./..." > /dev/null
 
     echo "@ Building windows/amd64 ..."
+    # shellcheck disable=SC2029
     ssh winvm "cd $DIR && go build -o bettercap.exe ." > /dev/null
 
     scp -C winvm:$DIR/bettercap.exe . > /dev/null
@@ -90,9 +97,11 @@ build_android_arm() {
     DIR=$GPATH/src/github.com/bettercap/bettercap
 
     echo "@ Updating repo on Android host ..."
+    # shellcheck disable=SC2027
     ssh -p 8022 root@shield "su -c 'export PATH=$THEPATH && export LD_LIBRARY_PATH="$LPATH" && cd "$DIR" && rm -rf bettercap* && git pull && export GOPATH=$GPATH && go get ./...'"
 
     echo "@ Building android/arm ..."
+    # shellcheck disable=SC2027
     ssh -p 8022 root@shield "su -c 'export PATH=$THEPATH && export LD_LIBRARY_PATH="$LPATH" && cd "$DIR" && export GOPATH=$GPATH && go build -o bettercap . && setenforce 0'"
 
     echo "@ Downloading bettercap ..."
@@ -101,6 +110,7 @@ build_android_arm() {
 
 rm -rf $BUILD_FOLDER
 mkdir $BUILD_FOLDER
+# shellcheck disable=SC2164
 cd $BUILD_FOLDER
 
 if [ -z "$1" ]
@@ -110,32 +120,36 @@ if [ -z "$1" ]
       WHAT="$1"
 fi
 
+# shellcheck disable=SC2059
 printf "@ Building for $WHAT ...\n\n"
 
 if [[ "$WHAT" == "all" || "$WHAT" == "linux_amd64" ]]; then
-    build_linux_amd64 && create_archive bettercap_linux_amd64_$VERSION.zip
+    build_linux_amd64 && create_archive bettercap_linux_amd64_"$VERSION".zip
 fi
 
 if [[ "$WHAT" == "all" || "$WHAT" == "linux_armv6l" ]]; then
-    build_linux_armv6l && create_archive bettercap_linux_armv6l_$VERSION.zip
+    build_linux_armv6l && create_archive bettercap_linux_armv6l_"$VERSION".zip
 fi
 
 if [[ "$WHAT" == "all" || "$WHAT" == "osx" || "$WHAT" == "mac" || "$WHAT" == "macos" ]]; then
-    build_macos_amd64 && create_archive bettercap_macos_amd64_$VERSION.zip
+    build_macos_amd64 && create_archive bettercap_macos_amd64_"$VERSION".zip
 fi
 
 if [[ "$WHAT" == "all" || "$WHAT" == "win" || "$WHAT" == "windows" ]]; then
-    build_windows_amd64 && create_exe_archive bettercap_windows_amd64_$VERSION.zip
+    build_windows_amd64 && create_exe_archive bettercap_windows_amd64_"$VERSION".zip
 fi 
 
 if [[ "$WHAT" == "all" || "$WHAT" == "android" ]]; then
-    build_android_arm && create_archive bettercap_android_armv7l_$VERSION.zip
+    build_android_arm && create_archive bettercap_android_armv7l_"$VERSION".zip
 fi
 
+# shellcheck disable=SC2035
 sha256sum * > checksums.txt
 
 echo
 echo
+# shellcheck disable=SC2035
 du -sh *
 
+# shellcheck disable=SC2164
 cd --

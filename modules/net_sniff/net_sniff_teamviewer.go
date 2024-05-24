@@ -1,11 +1,12 @@
 package net_sniff
 
 import (
-	"github.com/bettercap/bettercap/packets"
 	"net"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/bettercap/bettercap/packets"
+
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
 
 	"github.com/evilsocket/islazy/tui"
 )

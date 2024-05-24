@@ -193,6 +193,16 @@ func (m SessionModule) IPParam(name string) (error, net.IP) {
 	}
 }
 
+func (m SessionModule) MACParam(name string) (error, net.HardwareAddr) {
+	if err, v := m.StringParam(name); err != nil {
+		return err, nil
+	} else if hw, err := net.ParseMAC(v); err != nil {
+		return err, nil
+	} else {
+		return nil, hw
+	}
+}
+
 func (m SessionModule) IntParam(name string) (error, int) {
 	if p, found := m.params[name]; found {
 		if err, v := p.Get(m.Session); err != nil {

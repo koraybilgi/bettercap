@@ -13,7 +13,7 @@ import (
 
 	"github.com/bettercap/bettercap/session"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v57/github"
 
 	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/tui"

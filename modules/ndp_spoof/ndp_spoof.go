@@ -2,11 +2,12 @@ package ndp_spoof
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/packets"
-	"github.com/evilsocket/islazy/str"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/bettercap/bettercap/network"
+	"github.com/bettercap/bettercap/packets"
 
 	"github.com/bettercap/bettercap/session"
 )
@@ -16,6 +17,7 @@ type NDPSpoofer struct {
 	neighbour    net.IP
 	prefix       string
 	prefixLength int
+	macs         []net.HardwareAddr
 	addresses    []net.IP
 	ban          bool
 	waitGroup    *sync.WaitGroup
@@ -25,6 +27,7 @@ func NewNDPSpoofer(s *session.Session) *NDPSpoofer {
 	mod := &NDPSpoofer{
 		SessionModule: session.NewSessionModule("ndp.spoof", s),
 		addresses:     make([]net.IP, 0),
+		macs:          make([]net.HardwareAddr, 0),
 		ban:           false,
 		waitGroup:     &sync.WaitGroup{},
 	}
@@ -32,7 +35,7 @@ func NewNDPSpoofer(s *session.Session) *NDPSpoofer {
 	mod.SessionModule.Requires("net.recon")
 
 	mod.AddParam(session.NewStringParameter("ndp.spoof.targets", "", "",
-		"Comma separated list of IPv6 victim addresses."))
+		"Comma separated list of IPv6 addresses, MAC addresses to spoof."))
 
 	mod.AddParam(session.NewStringParameter("ndp.spoof.neighbour",
 		"fe80::1",
@@ -87,7 +90,8 @@ func (mod NDPSpoofer) Author() string {
 
 func (mod *NDPSpoofer) Configure() error {
 	var err error
-	var neigh, targets string
+	var neigh string
+	var targets string
 
 	if err, targets = mod.StringParam("ndp.spoof.targets"); err != nil {
 		return err
@@ -95,24 +99,20 @@ func (mod *NDPSpoofer) Configure() error {
 
 	if targets == "" {
 		mod.neighbour = nil
-		mod.addresses = nil
+		mod.addresses = mod.addresses[:0]
+		mod.macs = mod.macs[:0]
 	} else {
+		if mod.addresses, mod.macs, err = network.ParseTargets(targets, mod.Session.Lan.Aliases()); err != nil {
+			return err
+		}
+
 		if err, neigh = mod.StringParam("ndp.spoof.neighbour"); err != nil {
 			return err
 		} else if mod.neighbour = net.ParseIP(neigh); mod.neighbour == nil {
 			return fmt.Errorf("can't parse neighbour address %s", neigh)
 		}
 
-		mod.addresses = make([]net.IP, 0)
-		for _, addr := range str.Comma(targets) {
-			if ip := net.ParseIP(addr); ip != nil {
-				mod.addresses = append(mod.addresses, ip)
-			} else {
-				return fmt.Errorf("can't parse ip %s", addr)
-			}
-		}
-
-		mod.Debug(" addresses=%v", mod.addresses)
+		mod.Debug(" addresses=%v macs=%v", mod.addresses, mod.macs)
 	}
 
 	if err, mod.prefix = mod.StringParam("ndp.spoof.prefix"); err != nil {
@@ -203,7 +203,18 @@ func (mod *NDPSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 		if hw, err := mod.Session.FindMAC(ip, probe); err == nil {
 			targets[ip.String()] = hw
 		} else {
-			mod.Info("couldn't get MAC for ip=%s, put it into the neighbour table manually e.g. ping -6", ip)
+			mod.Info("couldn't get MAC for ip=%s, error: %v, put it into the neighbour table manually e.g. ping -6", ip, err)
+		}
+	}
+	// add targets specified by MAC address
+	for _, hw := range mod.macs {
+		if ip, err := network.ArpInverseLookup(mod.Session.Interface.Name(), hw.String(), false); err == nil {
+			if mod.Session.Skip(net.ParseIP(ip)) {
+				continue
+			}
+			targets[ip] = hw
+		} else {
+			mod.Info("couldn't get PI for mac=%s, error: %v put it into the neighbour table manually e.g. ip -6 neigh | grep %s", hw, err)
 		}
 	}
 

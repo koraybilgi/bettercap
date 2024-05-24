@@ -2,18 +2,19 @@ package net_recon
 
 import (
 	"fmt"
-	"github.com/bettercap/bettercap/modules/syn_scan"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/bettercap/bettercap/modules/syn_scan"
 
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
 
 	"github.com/dustin/go-humanize"
 
-	"github.com/evilsocket/islazy/tui"
 	"github.com/evilsocket/islazy/str"
+	"github.com/evilsocket/islazy/tui"
 )
 
 const (
@@ -145,6 +146,15 @@ func (mod *Discovery) doSelection(arg string) (err error, targets []*network.End
 		}
 	} else {
 		targets = mod.Session.Lan.List()
+
+		for mac, oldE := range mod.oldEndpoints {
+			if found, _ := mod.Session.Lan.Get(mac); found == nil {
+				targets = append(targets, &oldE)
+			}
+		}
+
+		mod.Error("targets: %v ", targets)
+
 	}
 
 	filtered := []*network.Endpoint{}
@@ -245,6 +255,7 @@ func (mod *Discovery) Show(arg string) (err error) {
 	if err, showMeta := mod.BoolParam("net.show.meta"); err != nil {
 		return err
 	} else if showMeta {
+		// Controlla che almeno un endpoint abbia metadati
 		for _, t := range targets {
 			if !t.Meta.Empty() {
 				hasMeta = true
