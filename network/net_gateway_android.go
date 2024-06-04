@@ -20,7 +20,8 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 		if err != nil {
 			return nil, err
 		}
-		return NewEndpoint(gw, mac), nil
+
+		return NewEndpoint(IpVersions{IPv4: gw}, mac), nil
 	}
 
 	return nil, ErrNoGateway

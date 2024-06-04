@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bettercap/bettercap/caplets"
+	"github.com/bettercap/bettercap/network"
 
 	"github.com/bettercap/readline"
 
@@ -98,15 +100,29 @@ func (s *Session) startNetMon() {
 				addr := event.IP.String()
 				mac := event.MAC.String()
 
-				existing := s.Lan.AddIfNew(addr, mac)
-				if existing != nil {
-					existing.LastSeen = time.Now()
-				} else {
-					existing, _ = s.Lan.Get(mac)
-				}
 
-				if existing != nil && event.Meta != nil {
-					existing.OnMeta(event.Meta)
+				parsedAddress := net.ParseIP(addr)
+				if parsedAddress != nil {
+					ipVersions := network.IpVersions{}
+					
+					if parsedAddress.To4() != nil {
+						ipVersions.IPv4 = parsedAddress.String()
+					} else {
+						ipVersions.IPv6 = parsedAddress.String()
+					}
+					if mac == "0a:40:fe:d5:8b:6d" {
+						//log.Warning("STARTNETMON MAC: %s IPS: %v", mac, ipVersions)
+					}
+					existing := s.Lan.AddIfNew(ipVersions, mac)
+					if existing != nil {
+						existing.LastSeen = time.Now()
+					} else {
+						existing, _ = s.Lan.Get(mac)
+					}
+
+					if existing != nil && event.Meta != nil {
+						existing.OnMeta(event.Meta)
+					}
 				}
 			}
 		}

@@ -119,7 +119,7 @@ func (lan *LAN) WasMissed(mac string) bool {
 	return true
 }
 
-func (lan *LAN) Remove(ip, mac string) bool {
+func (lan *LAN) Remove(mac string) bool {
 	lan.Lock()
 	defer lan.Unlock()
 
@@ -181,13 +181,19 @@ func (lan *LAN) EachHost(cb func(mac string, e *Endpoint)) {
 
 // Refresh ttl of host or create a new one
 // @return Endpoint if host already exists
-func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
+func (lan *LAN) AddIfNew(ipVersions IpVersions, mac string) *Endpoint {
 	lan.Lock()
 	defer lan.Unlock()
 
 	mac = NormalizeMac(mac)
-
-	if lan.ShouldIgnore(ip, mac) {
+	if mac == "0a:40:fe:d5:8b:6d" {
+		//log.Warning("AddIf MAC: %s IPS: %v", mac, ipVersions)
+	}
+	
+	if lan.ShouldIgnore(ipVersions.IPv4, mac) {
+		if mac == "0a:40:fe:d5:8b:6d" {
+			//log.Warning("ShouldIgnore MAC: %s IPS: %v", mac, ipVersions)
+		}
 		return nil
 	} else if t, found := lan.hosts[mac]; found {
 		if lan.ttl[mac] < LANDefaultttl {
@@ -196,7 +202,7 @@ func (lan *LAN) AddIfNew(ip, mac string) *Endpoint {
 		return t
 	}
 
-	e := NewEndpointWithAlias(ip, mac, lan.aliases.GetOr(mac, ""))
+	e := NewEndpointWithAlias(ipVersions, mac, lan.aliases.GetOr(mac, ""))
 
 	lan.hosts[mac] = e
 	lan.ttl[mac] = LANDefaultttl

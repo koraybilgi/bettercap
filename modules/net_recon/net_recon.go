@@ -82,46 +82,37 @@ func (mod Discovery) Author() string {
 
 func (mod *Discovery) runDiff(currentArpTable network.ArpTable) {
 	// check for endpoints who disappeared
-	var removeList network.ArpTable = make(network.ArpTable)
-
-	/*
-		La tabella di CACHE viene letteralmente dal comando `arp -a`, parsato.
-		Quando si fa il `remove` dalla LAN, l'host non viene realmente rimosso
-		fino a quando ttl = 0 (vedi network/lan.go),
-		Dopo 10 tentativi di Remove() (ovvero 10 secondi e 10 letture da `arp -a`)
-		LAN rimuove realmente l'host.
-		La natura del problema risiede nella differenza tra il ttl del sistema operativo
-		e il ttl di LAN. Per il sistema operativo un host è inattivo molto prima di
-		LAN, pertanto verrà reinserito piu volte in oldEndpoints.
-	*/
+	removeList := []string{}
 
 	mod.Session.Lan.EachHost(func(mac string, e *network.Endpoint) {
-		endpoint_ip := e.IpAddress
-		client_mac, found := currentArpTable[endpoint_ip]
-		mod.Warning("IP: %s - CMAC: %s HMAC: %s - Found: %s", endpoint_ip, client_mac, e.HwAddress, found)
-
-		if !found || (client_mac != e.HwAddress) { // not found or changed
-			removeList[mac] = e.IpAddress
-		} /* else if _, found := mod.oldEndpoints[mac]; found { // found and unchanged
-			delete(mod.oldEndpoints, mac)
-			mod.Warning("Removed %s -> %s from old endpoint", mac, e_ip)
-		}*/
+		_, found := currentArpTable[mac]
+		
+		if !found || (mac != e.HwAddress) {
+			removeList = append(removeList, mac)
+		}		
 	})
 
-	for mac, ip := range removeList {
-		endpoint := *mod.Session.Lan.GetByIp(ip)
-		if hard_remove := mod.Session.Lan.Remove(ip, mac); hard_remove {
-			mod.oldEndpoints[mac] = endpoint
-			//mod.Warning("Added %s -> %s to old endpoint len: %v", mac, ip, len(mod.oldEndpoints))
-
+	for _, mac := range removeList {
+		if endpoint, found := mod.Session.Lan.Get(mac); found {
+			if hard_remove := mod.Session.Lan.Remove(mac); hard_remove {
+				mod.oldEndpoints[mac] = *endpoint
+			}
 		}
 	}
 
 	// now check for new friends ^_^
-	for ip, mac := range currentArpTable {
-		if found := mod.Session.Lan.AddIfNew(ip, mac); found == nil && !mod.Session.Lan.ShouldIgnore(ip, mac) {
+	for mac, ipVersions := range currentArpTable {
+		if mac == "0a:40:fe:d5:8b:6d" {
+			//mod.Warning("FOUND MAC: %s IPS: %v", mac, ipVersions)
+		}
+
+		if endpoint, found := mod.Session.Lan.Get(mac); found {
+			if endpoint.IpAddress == ipVersions.IPv4 || endpoint.Ip6Address == ipVersions.IPv6 {
+				continue
+			}
+		}
+		if found := mod.Session.Lan.AddIfNew(ipVersions, mac); found == nil {
 			delete(mod.oldEndpoints, mac)
-			mod.Warning("FOUND %s %s oldEndpoints: %v", ip, mac, len(mod.oldEndpoints))
 		}
 	}
 }

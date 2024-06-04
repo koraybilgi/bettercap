@@ -118,6 +118,8 @@ func (mod *EventsStream) Render(output io.Writer, e session.Event) {
 		mod.viewWiFiEvent(output, e)
 	} else if strings.HasPrefix(e.Tag, "ble.") {
 		mod.viewBLEEvent(output, e)
+	} else if strings.HasPrefix(e.Tag, "dhcp4.") {
+		mod.viewDHCPMessage(output, e)
 	} else if strings.HasPrefix(e.Tag, "hid.") {
 		mod.viewHIDEvent(output, e)
 	} else if strings.HasPrefix(e.Tag, "gps.") {

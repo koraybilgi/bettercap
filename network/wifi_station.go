@@ -39,7 +39,7 @@ func cleanESSID(essid string) string {
 
 func NewStation(essid, bssid string, frequency int, rssi int8) *Station {
 	return &Station{
-		Endpoint:  NewEndpointNoResolve(MonitorModeAddress, bssid, cleanESSID(essid), 0),
+		Endpoint:  NewEndpointNoResolve(IpVersions{IPv4: MonitorModeAddress}, bssid, cleanESSID(essid), 0),
 		Frequency: frequency,
 		Channel:   Dot11Freq2Chan(frequency),
 		RSSI:      rssi,

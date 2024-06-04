@@ -23,7 +23,7 @@ func FindGateway(iface *Endpoint) (*Endpoint, error) {
 			return nil, err
 		}
 		Debug("gateway is %s[%s]", gateway, mac)
-		return NewEndpoint(gateway, mac), nil
+		return NewEndpoint(IpVersions{IPv4: gateway}, mac), nil
 	}
 
 	Debug("FindGateway(%s): nothing found :/", iface.Name())

@@ -8,6 +8,8 @@ import (
 	"github.com/bettercap/bettercap/modules/ble"
 	"github.com/bettercap/bettercap/modules/c2"
 	"github.com/bettercap/bettercap/modules/caplets"
+
+	//"github.com/bettercap/bettercap/modules/dhcp4_sniff"
 	"github.com/bettercap/bettercap/modules/dhcp6_spoof"
 	"github.com/bettercap/bettercap/modules/dns_spoof"
 	"github.com/bettercap/bettercap/modules/events_stream"
@@ -43,6 +45,7 @@ func LoadModules(sess *session.Session) {
 	sess.Register(api_rest.NewRestAPI(sess))
 	sess.Register(ble.NewBLERecon(sess))
 	sess.Register(dhcp6_spoof.NewDHCP6Spoofer(sess))
+	//sess.Register(dhcp4_sniff.NewDHCP4Sniffer(sess))
 	sess.Register(net_recon.NewDiscovery(sess))
 	sess.Register(dns_spoof.NewDNSSpoofer(sess))
 	sess.Register(events_stream.NewEventsStream(sess))

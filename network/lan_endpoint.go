@@ -33,14 +33,19 @@ type Endpoint struct {
 	Meta             *Meta                  `json:"meta"`
 }
 
-func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
+func NewEndpointNoResolve(ipVersions IpVersions, mac, name string, bits uint32) *Endpoint {
 	mac = NormalizeMac(mac)
 	hw, _ := net.ParseMAC(mac)
 	now := time.Now()
 
+	if mac == "0a:40:fe:d5:8b:6d" {
+		//log.Warning("NewEndpointNoResolve MAC: %s IPS: %v", mac, ipVersions)
+	}
+	
 	e := &Endpoint{
 		IP:               nil,
-		IpAddress:        ip,
+		IpAddress:        ipVersions.IPv4,
+		Ip6Address: 			ipVersions.IPv6,
 		IpAddressUint32:  0,
 		Net:              nil,
 		HW:               hw,
@@ -54,14 +59,19 @@ func NewEndpointNoResolve(ip, mac, name string, bits uint32) *Endpoint {
 		Meta:             NewMeta(),
 	}
 
-	e.SetIP(ip)
+	if ipVersions.IPv4 != "" {
+		e.SetIP(ipVersions.IPv4)
+	}
+	if ipVersions.IPv6 != "" {
+		e.SetIPv6(ipVersions.IPv6)
+	}
 	e.SetBits(bits)
 
 	return e
 }
 
-func NewEndpoint(ip, mac string) *Endpoint {
-	e := NewEndpointNoResolve(ip, mac, "", 0)
+func NewEndpoint(ipVersions IpVersions, mac string) *Endpoint {
+	e := NewEndpointNoResolve(ipVersions, mac, "", 0)
 	// start resolver goroutine
 	go func() {
 		if names, err := net.LookupAddr(e.IpAddress); err == nil && len(names) > 0 {
@@ -75,8 +85,8 @@ func NewEndpoint(ip, mac string) *Endpoint {
 	return e
 }
 
-func NewEndpointWithAlias(ip, mac, alias string) *Endpoint {
-	e := NewEndpoint(ip, mac)
+func NewEndpointWithAlias(ipVersions IpVersions, mac, alias string) *Endpoint {
+	e := NewEndpoint(ipVersions, mac)
 	e.Alias = alias
 	return e
 }

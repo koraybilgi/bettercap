@@ -190,7 +190,7 @@ func buildEndpointFromInterface(iface net.Interface) (*Endpoint, error) {
 
 	ifName := getInterfaceName(iface)
 
-	e := NewEndpointNoResolve(MonitorModeAddress, iface.HardwareAddr.String(), ifName, 0)
+	e := NewEndpointNoResolve(IpVersions{IPv4: MonitorModeAddress}, iface.HardwareAddr.String(), ifName, 0)
 
 	e.Index = iface.Index
 
@@ -322,7 +322,7 @@ func GatewayProvidedByUser(iface *Endpoint, gateway string) (*Endpoint, error) {
 			return nil, err
 		} else {
 			Debug("gateway is %s[%s]", gateway, mac)
-			return NewEndpoint(gateway, mac), nil
+			return NewEndpoint(IpVersions{IPv4: gateway}, mac), nil
 		}
 	}
 	return nil, fmt.Errorf("Provided gateway %s not a valid IPv4 address! Revert to find default gateway.", gateway)

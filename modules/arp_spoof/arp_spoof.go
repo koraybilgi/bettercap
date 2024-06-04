@@ -251,11 +251,11 @@ func (mod *ArpSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 	}
 	// add targets specified by MAC address
 	for _, hw := range mod.macs {
-		if ip, err := network.ArpInverseLookup(mod.Session.Interface.Name(), hw.String(), false); err == nil {
-			if mod.Session.Skip(net.ParseIP(ip)) {
+		if ipVersions, err := network.ArpInverseLookup(mod.Session.Interface.Name(), hw.String(), false); err == nil {
+			if mod.Session.Skip(net.ParseIP(ipVersions.IPv4)) {
 				continue
 			}
-			targets[ip] = hw
+			targets[ipVersions.IPv4] = hw
 		}
 	}
 

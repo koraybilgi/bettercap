@@ -175,7 +175,7 @@ func TestAddIfNew(t *testing.T) {
 	exampleLAN := buildExampleLAN()
 	iface, _ := FindInterface("")
 	// won't add our own IP address
-	if exampleLAN.AddIfNew(iface.IpAddress, iface.HwAddress) != nil {
+	if exampleLAN.AddIfNew(IpVersions{IPv4: iface.IpAddress}, iface.HwAddress) != nil {
 		t.Error("added address that should've been ignored ( your own )")
 	}
 }

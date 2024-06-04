@@ -208,11 +208,11 @@ func (mod *NDPSpoofer) getTargets(probe bool) map[string]net.HardwareAddr {
 	}
 	// add targets specified by MAC address
 	for _, hw := range mod.macs {
-		if ip, err := network.ArpInverseLookup(mod.Session.Interface.Name(), hw.String(), false); err == nil {
-			if mod.Session.Skip(net.ParseIP(ip)) {
+		if ipVersions, err := network.ArpInverseLookup(mod.Session.Interface.Name(), hw.String(), false); err == nil {
+			if mod.Session.Skip(net.ParseIP(ipVersions.IPv6)) {
 				continue
 			}
-			targets[ip] = hw
+			targets[ipVersions.IPv6] = hw
 		} else {
 			mod.Info("couldn't get PI for mac=%s, error: %v put it into the neighbour table manually e.g. ip -6 neigh | grep %s", hw, err)
 		}

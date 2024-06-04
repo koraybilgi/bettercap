@@ -82,6 +82,7 @@ func (s *Session) EventsCompleter(prefix string) []string {
 		"ble.device.new",
 		"ble.device.lost",
 		"ble.connection.timeout",
+		"dhcp4.message",
 		"hid.device.new",
 		"hid.device.lost",
 		"http.spoofed-request",
